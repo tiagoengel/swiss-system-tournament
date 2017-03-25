@@ -52,8 +52,8 @@ def registerPlayer(name):
       name: the player's full name (need not be unique).
     """
     with new_transaction() as cr:
-        query = "insert into players ( name ) values ( %(name)s )"
-        cr.execute(query, {"name": name})
+        query = "insert into players ( name ) values ( %s )"
+        cr.execute(query, (name,))
 
 
 def playerStandings():
@@ -89,30 +89,18 @@ def reportMatch(winner, loser):
     with new_transaction() as cr:
         query = """insert into
                    matches ( player, opponent, won, points )
-                   values ( %(player)s , %(opponent)s, %(won)s, %(points)s )"""
+                   values ( %s, %s, %s, %s )"""
 
         # The winner receives as points the ammount of wins the loser has plus
         # one. This will give more value to a win over a player that has won
         # more matches and the amount of points a user has can be used to find
-        # the best match.
-        loser_wins = fetchWins(loser)
+        # the best match and the winner in case of ties.
+        cr.execute("select wins from player_status where id = %s", (loser,))
+        loser_wins = cr.fetchone()[0]
         p = loser_wins + 1
-
-        params = ({"player": winner, "opponent": loser, "won": 1, "points": p},
-                  {"player": loser, "opponent": winner, "won": 0, "points": 0})
+        params = ((winner, loser, 1, p,),
+                  (loser, winner, 0, 0,))
         cr.executemany(query, params)
-
-
-# TODO: add tests
-def fetchWins(player):
-    """Fetchs the number of wins a player has
-
-    Args:
-        player:  the player id.
-    """
-    with new_transaction() as cr:
-        cr.execute("select wins from player_status where id = %(player)s", {"player": player})
-        return cr.fetchone()[0]
 
 
 def swissPairings():
@@ -138,6 +126,4 @@ def swissPairings():
         return (p1[0], p1[1], p2[0], p2[1])
 
     return [create_pair(i) for i in xrange(0, len(players), 2)]
-
-
 

@@ -147,9 +147,57 @@ def testPairings():
     print "10. After one match, players with one win are properly paired."
 
 
+def testParingsUsingPoints():
+    """Test that parings are made using both the wins and the user's points.
+
+    Points are given to an user in every match and are related to the amount of
+    wins the opponent has, thus given more value too a win over a better oppenent.
+    """
+    deleteMatches()
+    deletePlayers()
+
+    [registerPlayer(p) for p in ["A", "B", "C", "D", "E", "F", "G", "H"]]
+
+    standings = playerStandings()
+    [a, b, c, d, e, f, g, h] = [row[0] for row in standings]
+
+    reportMatch(a, b)
+    reportMatch(c, d)
+    reportMatch(e, f)
+    reportMatch(g, h)
+
+    reportMatch(a, c)
+    reportMatch(e, g)
+    reportMatch(b, d)
+    reportMatch(f, h)
+
+    # Porpuselly match the games in the wrong order
+    # to test the parings
+    reportMatch(b, a)
+    reportMatch(f, e)
+    reportMatch(c, d)
+    reportMatch(g, h)
+
+    # After this A, B, E and F should have 2 wins each but
+    # B and E should have more points, thus they need to be
+    # paired for the next match
+    pairings = [set([p[1], p[3]]) for p in swissPairings()]
+
+    if not set(["B", "F"]) in pairings:
+        raise ValueError(
+            "B and E should've been paired")
+
+    if not set(["A", "E"]) in pairings:
+        raise ValueError(
+            "A and F should've been paired")
+
+    print "11. Wins over players with more wins should have more value."
+
+
 if __name__ == '__main__':
     testCount()
     testStandingsBeforeMatches()
     testReportMatches()
     testPairings()
+    testParingsUsingPoints()
     print "Success!  All tests pass!"

@@ -27,6 +27,6 @@ CREATE VIEW player_status as
   FROM players
   LEFT JOIN matches on players.id = matches.player
   GROUP BY players.id
-  ORDER BY wins, points;
+  ORDER BY wins desc, points desc, players.id;
 
 
