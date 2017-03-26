@@ -7,6 +7,16 @@ import psycopg2
 
 
 class new_transaction:
+    """Handles opening and closing new connections/transtactions.
+
+    This class should be used within a `with` keyword. The code inside it
+    will be executed on a new database transaction that will be committed
+    after leaving the `with` statement.
+
+    Example:
+        with new_transaction() as cr:
+            cr.execute("delete * from users")
+    """
     def __enter__(self):
         self.db = connect()
         self.cr = self.db.cursor()
@@ -152,7 +162,7 @@ def report_match(tournament, winner, loser):
         # The winner receives as points the ammount of wins the loser has plus
         # one. This will give more value to a win over a player that has more
         # wins and the amount of points a user has can be used to find
-        # the best match and the winner in case of ties.
+        # the best match, and the winner in case of ties.
         cr.execute("""
             select wins from tournament_status
             where id = %s
