@@ -13,35 +13,77 @@ def test_count():
     """
     delete_all_matches()
     delete_tournaments()
-    delete_players()
-    c = count_players()
+    delete_all_players()
+    c = count_all_players()
     if c == '0':
         raise TypeError(
-            "count_players should return numeric zero, not string '0'.")
+            "count_all_players should return numeric zero, not string '0'.")
     if c != 0:
-        raise ValueError("After deletion, count_players should return zero.")
-    print "1. count_players() returns 0 after initial delete_players() execution."  # noqa
+        raise ValueError("After deletion, count_all_players should return zero.")  # noqa
+    print "1. count_all_players() returns 0 after initial delete_all_players() execution."  # noqa
     register_player("Chandra Nalaar")
-    c = count_players()
+    c = count_all_players()
     if c != 1:
         raise ValueError(
-            "After one player registers, count_players() should be 1. Got {c}"
+            "After one player registers, count_all_players() should be 1. Got {c}"  # noqa
             .format(c=c))
-    print "2. count_players() returns 1 after one player is registered."
+    print "2. count_all_players() returns 1 after one player is registered."
     register_player("Jace Beleren")
-    c = count_players()
+    c = count_all_players()
     if c != 2:
         raise ValueError(
-            "After two players register, count_players() should be 2. Got {c}"
+            "After two players register, count_all_players() should be 2. Got {c}"  # noqa
             .format(c=c))
-    print "3. count_players() returns 2 after two players are registered."
-    delete_players()
-    c = count_players()
+    print "3. count_all_players() returns 2 after two players are registered."
+    delete_all_players()
+    c = count_all_players()
     if c != 0:
         raise ValueError(
-            "After deletion, count_players should return zero.")
-    print "4. count_players() returns zero after registered players are deleted."  # noqa
+            "After deletion, count_all_players should return zero.")
+    print "4. count_all_players() returns zero after registered players are deleted."  # noqa
     print "5. Player records successfully deleted."
+
+    register_player("Jace Beleren")
+    register_tournament("Counting contest")
+    register_tournament("Backwards running contest")
+    [(tid1, tname1), (tid2, tname2)] = list_tournaments()
+    register_all_players_into(tid1)
+
+    register_player("Chandra Nalaar")
+    register_all_players_into(tid2)
+
+    c = count_players(tid1)
+    if c != 1:
+        raise ValueError(
+            "After one player register, count_players() should be 1 for "
+            "the first contest. Got {c}"
+            .format(c=c))
+
+    c = count_players(tid2)
+    if c != 2:
+        raise ValueError(
+            "After two players register, count_players() should be 2 for "
+            "the second contest. Got {c}"
+            .format(c=c))
+
+    print "6. count_players() returns the right amount of players in each tournament."  # noqa
+    delete_players(tid1)
+    c = count_players(tid1)
+    if c != 0:
+        raise ValueError(
+            "After deletion, count_all_players should return zero."
+            "the first contest. Got {c}"
+            .format(c=c))
+
+    delete_players(tid2)
+    c = count_players(tid2)
+    if c != 0:
+        raise ValueError(
+            "After deletion, count_all_players should return zero."
+            "the first contest. Got {c}"
+            .format(c=c))
+
+    print "7. delete_players() remove players from the right tournament."
 
 
 def test_register_tournaments():
@@ -61,7 +103,7 @@ def test_register_tournaments():
         raise ValueError(
             "After deletion, list_tournaments should return zero")
 
-    print "5. test_register_tournaments() register and deletes tournaments correctly."  # noqa
+    print "8. test_register_tournaments() register and deletes tournaments correctly."  # noqa
 
 
 def test_standings_before_matches():
@@ -71,7 +113,7 @@ def test_standings_before_matches():
     """
     delete_all_matches()
     delete_tournaments()
-    delete_players()
+    delete_all_players()
     register_player("Melpomene Murray")
     register_player("Randy Schwartz")
     [(p1, p1name), (p2, p2name)] = list_players()
@@ -96,7 +138,7 @@ def test_standings_before_matches():
         raise ValueError(
             "Registered players' names should appear in standings, "
             "even if they have no matches played.")
-    print "6. Newly registered players appear in the standings with no matches."  # noqa
+    print "9. Newly registered players appear in the standings with no matches."  # noqa
 
 
 def test_report_matches():
@@ -106,7 +148,7 @@ def test_report_matches():
     """
     delete_all_matches()
     delete_tournaments()
-    delete_players()
+    delete_all_players()
     register_player("Bruno Walton")
     register_player("Boots O'Neal")
     register_player("Cathy Burton")
@@ -130,7 +172,7 @@ def test_report_matches():
         elif i in (id2, id4) and w != 0:
             raise ValueError(
                 "Each match loser should have zero wins recorded.")
-    print "7. After a match, players have updated standings."
+    print "10. After a match, players have updated standings."
 
     delete_all_matches()
     standings = player_standings(tid)
@@ -144,14 +186,15 @@ def test_report_matches():
         if w != 0:
             raise ValueError(
                 "After deleting matches, players should have zero wins recorded.")  # noqa
-    print "8. After match deletion, player standings are properly reset.\n9. Matches are properly deleted."  # noqa
+    print "11. After match deletion, player standings are properly reset."
+    print "12. Matches are properly deleted."
 
 
 def test_pairings():
     """Test that pairings are generated properly both before and after match reporting."""  # noqa
     delete_all_matches()
     delete_tournaments()
-    delete_players()
+    delete_all_players()
     register_player("Twilight Sparkle")
     register_player("Fluttershy")
     register_player("Applejack")
@@ -201,7 +244,7 @@ def test_pairings():
         if pair not in possible_pairs:
             raise ValueError(
                 "After one match, players with one win should be paired.")
-    print "10. After one match, players with one win are properly paired."
+    print "13. After one match, players with one win are properly paired."
 
 
 def test_parings_using_points():
@@ -213,7 +256,7 @@ def test_parings_using_points():
     """
     delete_all_matches()
     delete_tournaments()
-    delete_players()
+    delete_all_players()
 
     [register_player(p) for p in ["A", "B", "C", "D", "E", "F", "G", "H"]]
 
@@ -254,7 +297,7 @@ def test_parings_using_points():
         raise ValueError(
             "A and F should've been paired")
 
-    print "11. Wins over players with more wins should have more value."
+    print "14. Wins over players with more wins should have more value."
 
 
 def test_multiple_tournaments():
@@ -266,7 +309,7 @@ def test_multiple_tournaments():
     """
     delete_all_matches()
     delete_tournaments()
-    delete_players()
+    delete_all_players()
 
     [register_player(p) for p in ["A", "B", "C", "D", "E", "F", "G", "H"]]
 
@@ -308,7 +351,7 @@ def test_multiple_tournaments():
         raise ValueError(
             "Selfie parings should return 2 pairs.")
 
-    print "12. Parings with multiple tournaments should work."
+    print "15. Parings with multiple tournaments should work."
 
     report_match(tid1, id1, id2)
     report_match(tid1, id3, id4)
@@ -342,12 +385,52 @@ def test_multiple_tournaments():
     ])
     test_standings(tid2, "Selfie contest", t2_expected_status)
 
-    print "13. Matches result from one tournament should not interfere in the others."  # noqa
+    print "16. Matches result from one tournament should not interfere in the others."  # noqa
 
     delete_matches(tid1)
     test_standings(tid2, "Selfie contest", t2_expected_status)
 
-    print "13. Removing matches from one tournament should not interfere in the others."  # noqa
+    print "17. Removing matches from one tournament should not interfere in the others."  # noqa
+
+
+def test_report_winner():
+    delete_all_matches()
+    delete_tournaments()
+    delete_all_players()
+
+    [register_player(p) for p in ["A", "B", "C", "D"]]
+
+    register_tournament("Go tournament")
+    [(tid1, tname1)] = list_tournaments()
+    register_all_players_into(tid1)
+
+    standings = player_standings(tid1)
+    [id1, id2, id3, id4] = [row[0] for row in standings]
+
+    report_match(tid1, id1, id2)
+    report_match(tid1, id3, id4)
+
+    if report_winner(tid1):
+        raise ValueError(
+            "Tournament should have no winner if the minimun amount "
+            "of matches was not played")
+
+    print "18. The tournament has no winner if the minimun amount of matches was not played."  # noqa
+
+    report_match(tid1, id1, id3)
+    report_match(tid1, id2, id4)
+
+    winner = report_winner(tid1)
+    if not winner:
+        raise ValueError(
+            "Tournament should have a winner after minimun amount "
+            "of matches is played")
+
+    if winner[0] != id1:
+        raise ValueError(
+            "The winner should be the player A")
+
+    print "19. The right winner is reported."
 
 
 def test_standings(tournament_id, tournament_name, expected):
@@ -373,4 +456,5 @@ if __name__ == '__main__':
     test_pairings()
     test_parings_using_points()
     test_multiple_tournaments()
+    test_report_winner()
     print "Success!  All tests pass!"

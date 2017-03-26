@@ -4,6 +4,7 @@
 #
 
 import psycopg2
+import math
 
 
 class new_transaction:
@@ -82,16 +83,41 @@ def register_player_into_tournament(tournament, player):
             (tournament, player,))
 
 
-def delete_players():
+def delete_all_players():
     """Remove all the player records from the database."""
     with new_transaction() as cr:
         cr.execute("delete from players")
 
 
-def count_players():
+def delete_players(tournament):
+    """Remove all the player records from a tournament.
+
+    Args:
+        tournament: the tournament id.
+    """
+    with new_transaction() as cr:
+        cr.execute(
+            "delete from tournament_players where tournament = %s",
+            (tournament,))
+
+
+def count_all_players():
     """Returns the number of players currently registered."""
     with new_transaction() as cr:
         cr.execute("select count(*) from players")
+        return cr.fetchone()[0]
+
+
+def count_players(tournament):
+    """Returns the number of players currently registered in a torunament.
+
+    Args:
+        tournament: the tournament id.
+    """
+    with new_transaction() as cr:
+        cr.execute(
+            "select count(1) from tournament_players where tournament = %s",
+            (tournament,))
         return cr.fetchone()[0]
 
 
@@ -201,4 +227,41 @@ def swiss_pairings(tournament):
         return (p1[0], p1[1], p2[0], p2[1])
 
     return [create_pair(i) for i in xrange(0, len(players), 2)]
+
+
+def report_winner(tournament):
+    """Returns the winner of a tournament.
+
+    For a tournament to have a winner, a minimun of
+    `log2 ({number_of_players})` matches should have
+    been played.
+
+    Args:
+        tournament: the tournament id
+
+    Returns:
+      A tuple containing the winner information (id, name, wins, matches) or
+      None if there's is no winner.
+
+        id: the winner's id.
+        name: the winner's name.
+        wins: the number of wins the winner has.
+        matches: how many maches the winner has played.
+    """
+    with new_transaction() as cr:
+        cr.execute("""
+        select player_id, player_name, wins, matches from tournament_status
+        where tournament_status.id = %s
+        limit 1
+        """, (tournament,))
+        first_player = cr.fetchone()
+        matches = first_player[3]
+        players = count_players(tournament)
+        min_number_of_matches = int(round(math.log(players, 2)))
+
+        if matches < min_number_of_matches:
+            return None
+        else:
+            return first_player
+
 
