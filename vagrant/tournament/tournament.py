@@ -24,7 +24,7 @@ def connect():
 
 
 # TODO: should receive tournament id
-def deleteMatches():
+def delete_matches():
     """Remove all the match records from the database."""
     with new_transaction() as cr:
         cr.execute("delete from matches")
@@ -67,20 +67,20 @@ def register_player_into_tournament(tournament, player):
             (tournament, player,))
 
 
-def deletePlayers():
+def delete_players():
     """Remove all the player records from the database."""
     with new_transaction() as cr:
         cr.execute("delete from players")
 
 
-def countPlayers():
+def count_players():
     """Returns the number of players currently registered."""
     with new_transaction() as cr:
         cr.execute("select count(*) from players")
         return cr.fetchone()[0]
 
 
-def registerPlayer(name):
+def register_player(name):
     """Adds a player to the tournament database.
 
     The database assigns a unique serial id number for the player.  (This
@@ -107,7 +107,7 @@ def list_players():
         return cr.fetchall()
 
 
-def playerStandings(tournament):
+def player_standings(tournament):
     """Returns a list of the players and their win records, sorted by wins.
 
     The first entry in the list should be the player in first place, or a player
@@ -131,7 +131,7 @@ def playerStandings(tournament):
         return cr.fetchall()
 
 
-def reportMatch(tournament, winner, loser):
+def report_match(tournament, winner, loser):
     """Records the outcome of a single match between two players.
 
     Args:
@@ -160,7 +160,7 @@ def reportMatch(tournament, winner, loser):
         cr.executemany(query, params)
 
 
-def swissPairings(tournament):
+def swiss_pairings(tournament):
     """Returns a list of pairs of players for the next round of a match.
 
     Assuming that there are an even number of players registered, each player
@@ -178,7 +178,7 @@ def swissPairings(tournament):
         id2: the second player's unique id
         name2: the second player's name
     """
-    players = playerStandings(tournament)
+    players = player_standings(tournament)
 
     def create_pair(idx):
         p1 = players[idx]
