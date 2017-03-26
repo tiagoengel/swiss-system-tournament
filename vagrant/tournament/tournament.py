@@ -23,10 +23,48 @@ def connect():
     return psycopg2.connect("dbname=tournament")
 
 
+# TODO: should receive tournament id
 def deleteMatches():
     """Remove all the match records from the database."""
     with new_transaction() as cr:
         cr.execute("delete from matches")
+
+
+def delete_tournaments():
+    """Remove all the tournament records from the database."""
+    with new_transaction() as cr:
+        cr.execute("delete from tournament_players")
+        cr.execute("delete from tournaments")
+
+
+def register_tournament(name):
+    """Adds a new tournament to the tournament database.
+
+    Args:
+        name: the tournament's name.
+    """
+    with new_transaction() as cr:
+        cr.execute("insert into tournaments ( name ) values ( %s )", (name, ))
+
+
+def list_tournaments():
+    """Returns a list of all tournaments."""
+    with new_transaction() as cr:
+        cr.execute("select * from tournaments")
+        return cr.fetchall()
+
+
+def register_player_into_tournament(tournament, player):
+    """Register a player to participate in a tournament.
+
+    Args:
+        tournament: the tournament id.
+        player: the player id
+    """
+    with new_transaction() as cr:
+        cr.execute(
+            "insert into tournament_players values ( %s, %s )",
+            (tournament, player,))
 
 
 def deletePlayers():
@@ -56,11 +94,27 @@ def registerPlayer(name):
         cr.execute(query, (name,))
 
 
-def playerStandings():
+def list_players():
+    """Returns a list of all registered players.
+
+    Returns:
+      A list of tuples, each of which contains (id, name):
+        id: the player's unique id (assigned by the database)
+        name: the player's full name (as registered)
+    """
+    with new_transaction() as cr:
+        cr.execute("select * from players")
+        return cr.fetchall()
+
+
+def playerStandings(tournament):
     """Returns a list of the players and their win records, sorted by wins.
 
     The first entry in the list should be the player in first place, or a player
     tied for first place if there is currently a tie.
+
+    Args:
+        tournament: the tournament id.
 
     Returns:
       A list of tuples, each of which contains (id, name, wins, matches):
@@ -71,45 +125,51 @@ def playerStandings():
     """
     with new_transaction() as cr:
         cr.execute("""
-        select id, name, wins, matches from player_status as player
-        where not exists (
-            select 1 from matches where player = player.id and won is null
-        )
-        """)
+        select player_id, player_name, wins, matches from tournament_status
+        where tournament_status.id = %s
+        """, (tournament,))
         return cr.fetchall()
 
 
-def reportMatch(winner, loser):
+def reportMatch(tournament, winner, loser):
     """Records the outcome of a single match between two players.
 
     Args:
-      winner:  the id number of the player who won
-      loser:  the id number of the player who lost
+        tournament: the tournament id
+        winner:  the id number of the player who won
+        loser:  the id number of the player who lost
     """
     with new_transaction() as cr:
         query = """insert into
-                   matches ( player, opponent, won, points )
-                   values ( %s, %s, %s, %s )"""
+                   matches ( tournament, player, opponent, won, points )
+                   values ( %s, %s, %s, %s, %s )"""
 
         # The winner receives as points the ammount of wins the loser has plus
-        # one. This will give more value to a win over a player that has won
-        # more matches and the amount of points a user has can be used to find
+        # one. This will give more value to a win over a player that has more
+        # wins and the amount of points a user has can be used to find
         # the best match and the winner in case of ties.
-        cr.execute("select wins from player_status where id = %s", (loser,))
+        cr.execute("""
+            select wins from tournament_status
+            where id = %s
+              and player_id = %s
+        """, (tournament, loser,))
         loser_wins = cr.fetchone()[0]
         p = loser_wins + 1
-        params = ((winner, loser, 1, p,),
-                  (loser, winner, 0, 0,))
+        params = ((tournament, winner, loser, 1, p,),
+                  (tournament, loser, winner, 0, 0,))
         cr.executemany(query, params)
 
 
-def swissPairings():
+def swissPairings(tournament):
     """Returns a list of pairs of players for the next round of a match.
 
     Assuming that there are an even number of players registered, each player
     appears exactly once in the pairings.  Each player is paired with another
     player with an equal or nearly-equal win record, that is, a player adjacent
     to him or her in the standings.
+
+    Args:
+        tournament: the tournament id.
 
     Returns:
       A list of tuples, each of which contains (id1, name1, id2, name2)
@@ -118,7 +178,7 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
-    players = playerStandings()
+    players = playerStandings(tournament)
 
     def create_pair(idx):
         p1 = players[idx]

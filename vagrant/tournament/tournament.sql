@@ -12,21 +12,36 @@ CREATE DATABASE tournament;
 CREATE TABLE players ( id serial PRIMARY KEY,
                        name TEXT NOT NULL );
 
-CREATE TABLE matches ( player INTEGER REFERENCES players(id),
+CREATE TABLE tournaments ( id serial PRIMARY KEY,
+                           name TEXT NOT NULL );
+
+CREATE TABLE tournament_players ( tournament INTEGER REFERENCES tournaments(id),
+                                  player INTEGER REFERENCES players(id) );
+
+CREATE TABLE matches ( tournament INTEGER REFERENCES tournaments(id),
+                       player INTEGER REFERENCES players(id),
                        opponent INTEGER REFERENCES players(id),
                        won INTEGER,
                        points INTEGER DEFAULT 0 );
 
 
-CREATE VIEW player_status as
-  SELECT players.id,
-         players.name,
+CREATE VIEW tournament_status as
+  SELECT tournaments.id,
+         tournaments.name,
+         players.id as player_id,
+         players.name as player_name,
          coalesce(sum(matches.won), 0) as wins,
          count(matches.won) as matches,
          coalesce(sum(matches.points), 0) as points
-  FROM players
-  LEFT JOIN matches on players.id = matches.player
-  GROUP BY players.id
-  ORDER BY wins desc, points desc, players.id;
+  FROM tournaments
+  JOIN tournament_players
+    ON tournaments.id = tournament_players.tournament
+  JOIN players
+    ON tournament_players.player = players.id
+  LEFT JOIN matches
+    ON tournaments.id = matches.tournament
+   AND players.id = matches.player
+  GROUP BY tournaments.id, players.id
+  ORDER BY tournaments.id, wins desc, points desc, players.id;
 
 
