@@ -1,10 +1,6 @@
 -- Table definitions for the tournament project.
 --
--- Put your SQL 'create table' statements in this file; also 'create view'
--- statements if you choose to use it.
---
--- You can write comments in this file by starting them with two dashes, like
--- these lines here.
+-- load it using: psql -f tournament.sql
 
 CREATE DATABASE tournament;
 \connect tournament;
@@ -16,7 +12,8 @@ CREATE TABLE tournaments ( id serial PRIMARY KEY,
                            name TEXT NOT NULL );
 
 CREATE TABLE tournament_players ( tournament INTEGER REFERENCES tournaments(id),
-                                  player INTEGER REFERENCES players(id) );
+                                  player INTEGER REFERENCES players(id),
+                                  PRIMARY KEY (tournament, player) );
 
 CREATE TABLE matches ( tournament INTEGER REFERENCES tournaments(id),
                        player INTEGER REFERENCES players(id),
