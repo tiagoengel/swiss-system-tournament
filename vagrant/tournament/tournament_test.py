@@ -11,7 +11,7 @@ def test_count():
              player count after 1 and 2 players registered,
              player count after players deleted.
     """
-    delete_matches()
+    delete_all_matches()
     delete_tournaments()
     delete_players()
     c = count_players()
@@ -69,7 +69,7 @@ def test_standings_before_matches():
     Test to ensure players are properly represented in standings prior
     to any matches being reported.
     """
-    delete_matches()
+    delete_all_matches()
     delete_tournaments()
     delete_players()
     register_player("Melpomene Murray")
@@ -104,7 +104,7 @@ def test_report_matches():
     Test that matches are reported properly.
     Test to confirm matches are deleted properly.
     """
-    delete_matches()
+    delete_all_matches()
     delete_tournaments()
     delete_players()
     register_player("Bruno Walton")
@@ -132,7 +132,7 @@ def test_report_matches():
                 "Each match loser should have zero wins recorded.")
     print "7. After a match, players have updated standings."
 
-    delete_matches()
+    delete_all_matches()
     standings = player_standings(tid)
     if len(standings) != 4:
         raise ValueError(
@@ -149,7 +149,7 @@ def test_report_matches():
 
 def test_pairings():
     """Test that pairings are generated properly both before and after match reporting."""  # noqa
-    delete_matches()
+    delete_all_matches()
     delete_tournaments()
     delete_players()
     register_player("Twilight Sparkle")
@@ -211,7 +211,7 @@ def test_parings_using_points():
     wins the opponent has, thus given more value too a win over a better
     oppenent.
     """
-    delete_matches()
+    delete_all_matches()
     delete_tournaments()
     delete_players()
 
@@ -257,10 +257,113 @@ def test_parings_using_points():
     print "11. Wins over players with more wins should have more value."
 
 
+def test_multiple_tournaments():
+    """System should handle multiple tournaments.
+
+    Results from one tournament should not interfer on others and
+    users should be allowed to participate in more than one tournament
+    at the same time.
+    """
+    delete_all_matches()
+    delete_tournaments()
+    delete_players()
+
+    [register_player(p) for p in ["A", "B", "C", "D", "E", "F", "G", "H"]]
+
+    register_tournament("Bad jokes contest")
+    register_tournament("Selfie contest")
+
+    [(tid1, tname1), (tid2, tname2)] = list_tournaments()
+
+    all_players = list_players()
+    selfie_contestants = all_players[0:4]
+
+    [(id1, name1),
+     (id2, name2),
+     (id3, name3),
+     (id4, name4),
+     (id5, name5),
+     (id6, name6),
+     (id7, name7),
+     (id8, name8)] = all_players
+
+    [register_player_into_tournament(tid1, p[0]) for p in all_players]
+    [register_player_into_tournament(tid2, p[0]) for p in selfie_contestants]
+
+    t1_standings = player_standings(tid1)
+    if len(t1_standings) != 8:
+        raise ValueError("Bad jokes contest should have 8 players standing")
+
+    t2_standings = player_standings(tid2)
+    if len(t1_standings) != 8:
+        raise ValueError("Selfie contest should have 4 players standing")
+
+    t1_pairings = swiss_pairings(tid1)
+    if len(t1_pairings) != 4:
+        raise ValueError(
+            "Bad jokes parings should return 4 pairs.")
+
+    t2_pairings = swiss_pairings(tid2)
+    if len(t2_pairings) != 2:
+        raise ValueError(
+            "Selfie parings should return 2 pairs.")
+
+    print "12. Parings with multiple tournaments should work."
+
+    report_match(tid1, id1, id2)
+    report_match(tid1, id3, id4)
+    report_match(tid1, id5, id6)
+    report_match(tid1, id7, id8)
+
+    report_match(tid1, id1, id3)
+    report_match(tid1, id5, id7)
+    report_match(tid1, id2, id4)
+    report_match(tid1, id6, id8)
+
+    report_match(tid2, id2, id1)
+    report_match(tid2, id4, id3)
+
+    test_standings(tid1, "Bad jokes contest", set([
+        (id1, name1, 2, 2),
+        (id2, name2, 1, 2),
+        (id3, name3, 1, 2),
+        (id4, name4, 0, 2),
+        (id5, name5, 2, 2),
+        (id6, name6, 1, 2),
+        (id7, name7, 1, 2),
+        (id8, name8, 0, 2)
+    ]))
+
+    t2_expected_status = set([
+        (id1, name1, 0, 1),
+        (id2, name2, 1, 1),
+        (id3, name3, 0, 1),
+        (id4, name4, 1, 1)
+    ])
+    test_standings(tid2, "Selfie contest", t2_expected_status)
+
+    print "13. Matches result from one tournament should not interfere in the others."  # noqa
+
+    delete_matches(tid1)
+    test_standings(tid2, "Selfie contest", t2_expected_status)
+
+    print "13. Removing matches from one tournament should not interfere in the others."  # noqa
+
+
+def test_standings(tournament_id, tournament_name, expected):
+    standings = player_standings(tournament_id)
+    for standing in standings:
+        if standing not in expected:
+            raise ValueError(
+                "Player %s should have %s wins and %s matches in %s"
+                % (standing[1], standing[2], standing[3], tournament_name))
+
+
 def register_all_players_into(tournament):
     all_players = list_players()
     for (pid, name) in all_players:
         register_player_into_tournament(tournament, pid)
+
 
 if __name__ == '__main__':
     test_count()
@@ -269,4 +372,5 @@ if __name__ == '__main__':
     test_report_matches()
     test_pairings()
     test_parings_using_points()
+    test_multiple_tournaments()
     print "Success!  All tests pass!"

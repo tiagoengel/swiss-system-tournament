@@ -23,11 +23,16 @@ def connect():
     return psycopg2.connect("dbname=tournament")
 
 
-# TODO: should receive tournament id
-def delete_matches():
+def delete_all_matches():
     """Remove all the match records from the database."""
     with new_transaction() as cr:
         cr.execute("delete from matches")
+
+
+def delete_matches(tournament):
+    """Remove all matches from a tournament."""
+    with new_transaction() as cr:
+        cr.execute("delete from matches where tournament = %s", (tournament,))
 
 
 def delete_tournaments():
